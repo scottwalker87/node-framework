@@ -1,5 +1,6 @@
 const Router = require("./Router")
 const Server = require("./Server")
+const Logger = require("./Logger")
 const modules = require("./modules")
 
 /**
@@ -14,6 +15,7 @@ class Application {
     this.config = config || {}
     this.router = new Router(this.routes, this.routerConfig)
     this.server = new Server(this.serverHandler, this.serverConfig)
+    this.logger = new Logger(this.loggerConfig)
   }
 
   /**
@@ -37,6 +39,14 @@ class Application {
    */
   get serverConfig() {
     return this.config.server || {}
+  }
+
+  /**
+   * Конфигурация логгера
+   * @return {Object}
+   */
+  get loggerConfig() {
+    return this.config.logger || {}
   }
 
   /**

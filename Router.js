@@ -7,9 +7,9 @@ class Router {
    * @param {Array} routes 
    * @param {Object} config 
    */
-  constructor(routes, config = {}) {
-    this.routes = routes
-    this.config = config
+  constructor(routes, config) {
+    this.routes = routes || []
+    this.config = config || {}
   }
 
   /**

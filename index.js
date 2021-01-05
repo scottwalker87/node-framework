@@ -1,4 +1,4 @@
-const config = require("./config/main")
+const config = require("./config/main.local")
 const Application = require("./Application")
 
 const app = new Application(config)

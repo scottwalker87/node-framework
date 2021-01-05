@@ -5,19 +5,22 @@ const https = require("https")
  * Сервер
  */
 class Server {
+  static DEFAULT_PORT = 3000
+
   /**
    * Инициализировать сервер
    * @param {Function} handler 
    * @param {Object} config 
    */
   constructor(handler, config) {
-    this.handler = handler
-    this.config = config
+    this.handler = handler || this.defaultRequestHandler
+    this.config = config || {}
     this.server = this.httpDriver.createServer(this.requestHandler)
   }
 
   /**
    * Драйвер обработки соединения 
+   * @return {Object}
    */
   get httpDriver() {
     const isSSL =  (this.config.ssl && this.config.ssl.enable) || false
@@ -26,11 +29,18 @@ class Server {
   }
 
   /**
+   * Обработчик запросов по умолчанию
+   * @return {Function}
+   */
+  get defaultRequestHandler() {
+    return () => {}
+  }
+
+  /**
    * Запустить сервер
    */
   start() {
-    const DEFAULT_PORT = 3000
-    const port = this.config.port || DEFAULT_PORT
+    const port = this.config.port || Server.DEFAULT_PORT
 
     this.server.listen(port)
   }
