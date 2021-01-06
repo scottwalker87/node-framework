@@ -9,8 +9,13 @@ module.exports = [
   { 
     method: "GET", 
     path: "books/read/(?<id>\d+)", 
-    handler: ({ request, response }) => {}, 
+    handler: ({ route, request, response, context, headers, params, body, url }) => {}, 
     errorHandler: () => {} 
+  },
+  { 
+    method: "GET", 
+    path: "books/filter/(\d+)/(\w+)/(\d+)/desc", 
+    handler: handlers.list 
   },
   { 
     method: "POST", 
