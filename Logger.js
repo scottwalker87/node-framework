@@ -48,15 +48,27 @@ class Logger {
     // Формат по умолчанию
     return `${year}.${month}.${day} ${hour}:${minutes}:${seconds}:${milliseconds}`
   }
+  
+  /**
+   * Сформировать строку лога
+   * @param {String} title 
+   * @param {*} data 
+   */
+  makeLine(title, data) {
+    const text = data ? JSON.stringify({ data }, null, "  ") : null
+    const info = text ? `${title}\r\n${text}\r\n\r\n` : `${title}\r\n\r\n`
+
+    return `${this.currentDate}: ${info}`
+  }
 
   /**
    * Логировать
    * @param {String} group 
-   * @param {String} level 
    * @param {String} title 
    * @param {*} data 
+   * @param {String} level 
    */
-  log(group, level, title, data) {
+  log(group, title, data = null, level = Logger.LEVEL_INFO) {
     // Если указана директория для логов
     if (this.dir) {
       // Проверить директорию на доступность к записи
@@ -66,11 +78,10 @@ class Logger {
           console.error(`Директория ${this.dir} не доступна для записи`)
         } else {
           const file = path.resolve(this.dir, `${group}.${level}.log`)
-          const text = JSON.stringify(data, null, "  ")
-          const content = `${this.currentDate}: ${title}\r\n${text}\r\n\r\n`
+          const line = this.makeLine(title, data)
   
-          // Записать логи в файл
-          fs.writeFile(file, content, { flag: "a" }, writeError => {
+          // Записать лог в файл
+          fs.writeFile(file, line, { flag: "a" }, writeError => {
             // Если файл не может быть создан или не доступен для записи
             if (writeError) {
               console.error(`Файл ${file} не доступна для записи`)
@@ -88,7 +99,7 @@ class Logger {
    * @param {*} data 
    */
   info(group, title, data) {
-    this.log(group, Logger.LEVEL_INFO, title, data)
+    this.log(group, title, data, Logger.LEVEL_INFO)
   }
 
   /**
@@ -98,7 +109,7 @@ class Logger {
    * @param {*} data 
    */
   error(group, title, data) {
-    this.log(group, Logger.LEVEL_ERROR, title, data)
+    this.log(group, title, data, Logger.LEVEL_ERROR)
   }
 }
 
