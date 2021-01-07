@@ -1,5 +1,6 @@
 const fs = require("fs")
 const path = require("path")
+const { formatDate, formatters } = require("./utils/date.util")
 
 /**
  * Логгер
@@ -29,24 +30,9 @@ class Logger {
    * @return {String}
    */
   get currentDate() {
-    const date = new Date()
-    const data = {
-      year: date.getFullYear(),
-      month: String(date.getMonth() + 1).padStart(2, "0"),
-      day: String(date.getDate()).padStart(2, "0"),
-      hour: String(date.getHours()).padStart(2, "0"),
-      minutes: String(date.getMinutes()).padStart(2, "0"),
-      seconds: String(date.getSeconds()).padStart(2, "0"),
-      milliseconds: String(date.getMilliseconds()).padStart(3, "0")
-    }
+    const handler = this.config.dateFormat instanceof Function ? this.config.dateFormat : formatters.full
 
-    // Если есть метод форматирования даты
-    if (this.config.dateFormat instanceof Function) {
-      return this.config.dateFormat.call(null, data)
-    }
-
-    // Формат по умолчанию
-    return `${year}.${month}.${day} ${hour}:${minutes}:${seconds}:${milliseconds}`
+    return formatDate(new Date(), handler)
   }
   
   /**
