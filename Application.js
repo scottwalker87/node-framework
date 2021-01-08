@@ -2,22 +2,27 @@ const Router = require("./Router")
 const Server = require("./Server")
 const Logger = require("./Logger")
 const EventBus = require("./EventBus")
-const modules = require("./modules")
+// const { deepLog } = require("./utils/system.util")
 
 /**
  * Приложение
  */
 class Application {
-  /**+
+  // Группы логирования
+  static LOGGER_GROUP_SERVER = "server"
+
+  /**
    * Инициализировать приложение
+   * @param {Array} modules 
    * @param {Object} config 
    */
-  constructor(config) {
+  constructor(modules, config) {
     this.config = config || {}
+    this.modules = modules || []
     this.eventBus = new EventBus()
     this.router = new Router(this.routes, this.routerConfig)
-    this.server = new Server(this.eventBus, this.serverHandler, this.serverConfig)
-    this.logger = new Logger(this.eventBus, this.loggerConfig)
+    this.server = new Server(this.serverHandler.bind(this), this.serverConfig)
+    this.logger = new Logger(this.loggerConfig)
 
     // Установить слушателей событий
     this.setListeners()
@@ -66,10 +71,10 @@ class Application {
    * @return {Array}
    */
   get routes() {
-    return modules.reduce((routes, item) => {
+    return this.modules.reduce((routes, item) => {
       const itemRoutes = item.routes || {}
 
-      return { ...routes, ...itemRoutes }
+      return [...routes, ...itemRoutes]
     }, [])
   }
 
@@ -77,42 +82,36 @@ class Application {
    * Обработчик запросов
    * @param {Object} request 
    * @param {Object} response 
+   * @param {String} method 
+   * @param {Object} url 
    * @param {Object} headers 
    * @param {*} body 
-   * @param {Object} url 
    */
-  get serverHandler({ request, response, headers, body, url }) {
-    /**
-     * Обработчик с контекстом по умолчанию
-     */
-    const handler = function() {
-      const method = request.methods
-      const host = url.hostname
-      const path = url.pathname
-      const route = this.router.getRoute(method, host, path)
-      const queryParams = Object.fromEntries(url.searchParams)
-      const context = this.getContext({ route, request, response })
-      const data = { 
-        route, 
-        request, 
-        response,
-        context,
-        headers,
-        params: route.params,
-        queryParams,
-        body,
-        url
-      }
-  
-      try {
-        route.handler(data)
-      } catch {
-        route.errorHandler(data)
-      }
+  serverHandler({ request, response, method, url, headers, body }) {
+    const host = url.hostname
+    const path = url.pathname
+    const route = this.router.getRoute(method, host, path)
+    const queryParams = Object.fromEntries(url.searchParams)
+    const context = this.getContext({ route, request, response })
+    const data = { 
+      route, 
+      request, 
+      response,
+      context,
+      headers,
+      params: route.params,
+      queryParams,
+      body,
+      url
     }
 
-    // Привязать контекст приложения к обработчику
-    return handler.bind(this)
+    try {
+      // Обработать успешный запрос
+      route.handler(data)
+    } catch {
+      // Обработать запрос с ошибкой
+      route.errorHandler(data)
+    }
   }
 
   /**
@@ -175,7 +174,12 @@ class Application {
        * @param {String} event название события
        * @param {*} data дапнные
        */
-      emit: (event, ...data) => this.eventBus.emit(event, ...data)
+      emit: (event, ...data) => this.eventBus.emit(event, ...data),
+
+
+      // log(title, data) {
+      //   this.logger.log(Application.LOGGER_GROUP_SERVER, title, data, level)
+      // }
     }
   }
 
@@ -183,15 +187,19 @@ class Application {
    * Установить слушателей событий
    */
   setListeners() {
-    const listeners = {
-      "logger:log": ({ group, title, data, level }) => this.logger.log(group, title, data, level),
-      "logger:info": ({ group, title, data }) => this.logger.info(group, title, data),
-      "logger:error": ({ group, title, data }) => this.logger.error(group, title, data),
-    }
+    // const listeners = {
+    //   "logger:log": ({ group, title, data, level }) => this.logger.log(group, title, data, level),
+    //   "logger:info": ({ group, title, data }) => this.logger.info(group, title, data),
+    //   "logger:error": ({ group, title, data }) => this.logger.error(group, title, data),
+    // }
     
-    for (const [event, callback] of Object.entries(listeners)) {
-      this.eventBus.on(event, callback)
-    }
+    // for (const [event, callback] of Object.entries(listeners)) {
+    //   this.eventBus.on(event, callback)
+    // }
+
+    this.server.on("log", ({ level, title, data }) => {
+      this.logger.log(Application.LOGGER_GROUP_SERVER, title, data, level)
+    })
   }
 }
 

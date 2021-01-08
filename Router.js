@@ -109,11 +109,11 @@ class Router {
   getPathParams(path, pattern) {
     const { groups, index, input, ...matches } = path.match(new RegExp(`^${pattern}$`))
     const params = groups || {}
-    const matches = Object.values(matches)
+    const indexedParams = Object.values(matches)
 
-    matches.shift()
+    indexedParams.shift()
 
-    return { ...params, ...matches }
+    return { ...params, ...indexedParams }
   }
 }
 
