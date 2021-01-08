@@ -1,3 +1,3 @@
 module.exports = ({ context }) => {
-  context.notFound({ message: "Not Found" })
+  context.error({ message: "Error of base module" })
 }

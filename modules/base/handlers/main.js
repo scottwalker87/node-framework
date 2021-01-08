@@ -1,3 +1,3 @@
 module.exports = ({ context }) => {
-  context.ok({ message: "Hello" })
+  context.ok({ message: "Hello from base module" })
 }

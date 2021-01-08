@@ -1,4 +1,4 @@
 module.exports = {
-  list: require("./main"),
-  add: require("./main")
+  main: require("./main"),
+  error: require("./error")
 }
