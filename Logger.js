@@ -41,10 +41,10 @@ class Logger {
    * @param {*} data 
    */
   makeLine(title, data) {
-    const text = data ? JSON.stringify({ data }, null, "  ") : null
+    const text = data ? JSON.stringify(data, null, "  ") : null
     const info = text ? `${title}\r\n${text}\r\n\r\n` : `${title}\r\n\r\n`
 
-    return `${this.currentDate}: ${info}`
+    return `${this.currentDate} - ${info}`
   }
 
   /**
@@ -58,7 +58,7 @@ class Logger {
     // Если указана директория для логов
     if (this.dir) {
       // Проверить директорию на доступность к записи
-      fs.access(this.dir, fs.constants.F_OK | fs.constants.W_OK), accessError => {
+      fs.access(this.dir, fs.constants.F_OK | fs.constants.W_OK, accessError => {
         // Если директория не существует или не доступна для записи 
         if (accessError) {
           console.error(`Директория ${this.dir} не доступна для записи`)
@@ -74,7 +74,7 @@ class Logger {
             }
           })
         }
-      }
+      })
     }
   }
 

@@ -5,16 +5,17 @@ module.exports = {
     defaultHeaders: {
       "Content-Type": "application/json"
     },
-    defaultHandler: () => {},
-    defaultErrorHandler: () => {},
+    defaultHandler: ({ context }) => context.ok("default"),
+    defaultErrorHandler: ({ context }) => context.error("error"),
   },
   logger: {
-    dir: path.resolve(__dirname, "./logs"),
+    dir: path.resolve(__dirname, "../logs"),
     // dateFormat: ({ year, month, day, hour, minutes, seconds, milliseconds }) => {
     //   return `${year}.${month}.${day} ${hour}:${minutes}:${seconds}:${milliseconds}`
     // }
   },
   server: {
+    host: "localhost",
     port: 3000,
     ssl: {
       enable: false
