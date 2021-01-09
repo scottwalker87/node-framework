@@ -2,7 +2,6 @@ const Router = require("./Router")
 const Server = require("./Server")
 const Logger = require("./Logger")
 const EventBus = require("./EventBus")
-// const { deepLog } = require("./utils/system.util")
 
 /**
  * Приложение
@@ -71,11 +70,18 @@ class Application {
    * @return {Array}
    */
   get routes() {
-    return this.modules.reduce((routes, item) => {
-      const itemRoutes = item.routes || {}
+    const routes = []
 
-      return [...routes, ...itemRoutes]
-    }, [])
+    // Обойти модули
+    this.modules.forEach(item => {
+
+      // Обойти маршруты
+      item.routes.forEach(route => {
+        routes.push({ ...route,  moduleId: item.id })
+      })
+    })
+
+    return routes
   }
 
   /**
@@ -176,10 +182,19 @@ class Application {
        */
       emit: (event, ...data) => this.eventBus.emit(event, ...data),
 
+      /**
+       * Логировать информацию
+       * @param {String} title 
+       * @param {*} data 
+       */
+      logInfo: (title, data) => this.logger.info(route.moduleId, title, data),
 
-      // log(title, data) {
-      //   this.logger.log(Application.LOGGER_GROUP_SERVER, title, data, level)
-      // }
+      /**
+       * Логировать ошибку
+       * @param {String} title 
+       * @param {*} data 
+       */
+      logError: (title, data) => this.logger.error(route.moduleId, title, data),
     }
   }
 

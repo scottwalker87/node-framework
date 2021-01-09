@@ -6,6 +6,11 @@ module.exports = [
     path: "/", 
     handler: handlers.main 
   },
+  {
+    method: "POST", 
+    path: "/post", 
+    handler: handlers.post 
+  },
   // { 
   //   method: "GET", 
   //   path: "books/read/(?<id>\d+)", 
