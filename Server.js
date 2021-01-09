@@ -124,9 +124,7 @@ class Server extends EventEmitter {
     let body = ""
 
     // Слушать событие передачи тела запроса 
-    request.on("data", data => {
-      body += data
-    })
+    request.on("data", data => { body += data })
 
     // Слушать событие ошибки запроса
     request.on("error", error => {
@@ -136,17 +134,16 @@ class Server extends EventEmitter {
 
     // Слушать событие завершения запроса
     request.on("end", () => {
-      // Логировать запрос
-      this.log(Server.LOGGER_LEVEL_INFO, `${method} запрос ${url}`, { method, url, headers, body })
-
       try {
         // Парсить тело запроса
         body = this.parseBody(headers, body)
-
       } catch (error) {
         // Логировать ошибку парсинга тела запроса
         this.log(Server.LOGGER_LEVEL_ERROR, `Невалидное тело ${method} запроса ${url}`, { method, url, headers, body, error })
       }
+
+      // Логировать запрос
+      this.log(Server.LOGGER_LEVEL_INFO, `${method} запрос ${url}`, { method, url, headers, body })
 
       // Вызвать обработчик
       this.handler.call(null, { request, response, method, url, headers, body })

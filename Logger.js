@@ -40,7 +40,7 @@ class Logger {
    * @param {String} title 
    * @param {*} data 
    */
-  makeLine(title, data) {
+  makeLine(title, data = null) {
     const text = data ? JSON.stringify(data, null, "  ") : null
     const info = text ? `${title}\r\n${text}\r\n\r\n` : `${title}\r\n\r\n`
 

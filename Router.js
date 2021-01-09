@@ -54,8 +54,18 @@ class Router {
        * Сопоставить метод
        * @return {Boolean}
        */
-      const matchMethod = () => String(route.method).toUpperCase() === method
-      /**
+      const matchMethod = () => { 
+        const compare = comparedMethod => String(comparedMethod).toUpperCase() === method
+
+        // Если задан массив доступных методов
+        if (route.method instanceof Array) {
+          return route.method.some(compare)
+        } else {
+          return compare(route.method)
+        }
+      }
+
+        /**
        * Сопоставить хост
        * @return {Boolean}
        */
