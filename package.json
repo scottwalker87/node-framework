@@ -1,0 +1,24 @@
+{
+  "name": "@scottwalker/node-framework",
+  "version": "1.0.2",
+  "description": "Node framework for typical tasks",
+  "author": "scottwalker",
+  "license": "Apache-2.0",
+  "main": "./core/index.js",
+  "scripts": {
+    "start": "node ."
+  },
+  "keywords": ["node-framework"],
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "engineStrict": true,
+  "bugs": {
+    "url": "https://github.com/scottwalker87/node-framework/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scottwalker87/node-framework.git"
+  },
+  "homepage": "https://github.com/scottwalker87/node-framework#readme"
+}

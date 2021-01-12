@@ -1,6 +1,6 @@
-const config = require("./config/main.local")
+const { Application } = require("@scottwalker/node-framework")
+const config = require("./config/main")
 const modules = require("./modules")
-const Application = require("./Application")
 
 // Инициализировать приложение
 const app = new Application(modules, config)
