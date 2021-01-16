@@ -202,16 +202,7 @@ class Application {
    * Установить слушателей событий
    */
   setListeners() {
-    // const listeners = {
-    //   "logger:log": ({ group, title, data, level }) => this.logger.log(group, title, data, level),
-    //   "logger:info": ({ group, title, data }) => this.logger.info(group, title, data),
-    //   "logger:error": ({ group, title, data }) => this.logger.error(group, title, data),
-    // }
-    
-    // for (const [event, callback] of Object.entries(listeners)) {
-    //   this.eventBus.on(event, callback)
-    // }
-
+    // Слушать логирование сервера
     this.server.on("log", ({ level, title, data }) => {
       this.logger.log(Application.LOGGER_GROUP_SERVER, title, data, level)
     })

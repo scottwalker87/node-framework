@@ -19,6 +19,9 @@ class Server extends EventEmitter {
   static LOGGER_LEVEL_INFO = "info"
   static LOGGER_LEVEL_ERROR = "error"
 
+  // Заголовки
+  static HEADER_CONTENT_TYPE = "content-type"
+
   // MIME типы
   static MIME_TYPE_JSON = "application/json"
 
@@ -95,9 +98,14 @@ class Server extends EventEmitter {
    * Запустить сервер
    */
   start() {
-    this.server.listen(this.port, this.host, () => {
-      // Логировать новый статус сервера
-      this.log(Server.LOGGER_LEVEL_INFO, `Сервер запущен на ${this.url}`)
+    return new Promise(resolve => {
+      this.server.listen(this.port, this.host, () => {
+        
+        // Логировать новый статус сервера
+        this.log(Server.LOGGER_LEVEL_INFO, `Сервер запущен на ${this.url}`)
+        
+        resolve()
+      })
     })
   }
 
@@ -105,9 +113,14 @@ class Server extends EventEmitter {
    * Остановить сервер
    */
   stop() {
-    this.server.close(() => {
-      // Логировать новый статус сервера
-      this.log(Server.LOGGER_LEVEL_INFO, "Сервер остоновлен")
+    return new Promise(resolve => {
+      this.server.close(() => {
+        
+        // Логировать новый статус сервера
+        this.log(Server.LOGGER_LEVEL_INFO, "Сервер остоновлен")
+
+        resolve()
+      })
     })
   }
 
@@ -157,9 +170,9 @@ class Server extends EventEmitter {
    * @return {*}
    */
   parseBody(headers, body) {
-    const contentTypeKey = Object.keys(headers).find(key => key.toLowerCase() === "content-type")
-    const contentTypeValue = headers[contentTypeKey] || ""
-    const isContentTypeJson = contentTypeValue.toLowerCase() === Server.MIME_TYPE_JSON
+    const isContentTypeJson = Object.entries(headers).some(([key, value]) => {
+      return key.toLowerCase() === Server.HEADER_CONTENT_TYPE && value.toLowerCase().includes(Server.MIME_TYPE_JSON)
+    })
 
     return isContentTypeJson ? JSON.parse(body) : body
   }

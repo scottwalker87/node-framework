@@ -10,9 +10,6 @@ module.exports = {
   },
   logger: {
     dir: path.resolve(__dirname, "../logs"),
-    // dateFormat: ({ year, month, day, hour, minutes, seconds, milliseconds }) => {
-    //   return `${year}.${month}.${day} ${hour}:${minutes}:${seconds}:${milliseconds}`
-    // }
   },
   server: {
     host: "localhost",
