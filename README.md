@@ -1,6 +1,6 @@
 # Node Framework
 
-<img src="https://nodejs.org/static/images/logos/nodejs-new-pantone-black.svg" alt="node-framework" style="width: 200px; margin-bottom: 30px;"/>
+<img src="https://nodejs.org/static/images/logos/nodejs-new-pantone-black.svg" alt="node-framework" width="300"/>
 
 [![Build Status](https://img.shields.io/github/checks-status/scottwalker87/node-framework/main?style=for-the-badge)](https://github.com/scottwalker87/node-framework)
 [![Build Version](https://img.shields.io/github/package-json/v/scottwalker87/node-framework?style=for-the-badge)](https://github.com/scottwalker87/node-framework)
