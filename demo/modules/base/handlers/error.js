@@ -1,3 +1,7 @@
-module.exports = ({ context }) => {
-  context.error({ message: "Error of base module" })
+/**
+ * Обработчик ошибок в базовом модуле
+ * @param {Object} context 
+ */
+module.exports = ({ error }) => {
+  error({ message: "Error of base module" })
 }

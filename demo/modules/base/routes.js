@@ -1,15 +1,9 @@
-const handlers = require("./handlers")
-
 module.exports = [
   {
     method: "GET", 
     path: "/", 
-    handler: handlers.main 
-  },
-  {
-    method: "POST", 
-    path: "/post", 
-    handler: handlers.post 
+    handler: require("./handlers/main"),
+    errorHandler: require("./handlers/error")
   },
   // { 
   //   method: "GET", 
