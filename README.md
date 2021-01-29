@@ -39,18 +39,21 @@ const path = require("path")
 
 module.exports = {
   router: {
-    defaultHeaders: {
+    options: {
+      jsonResponse: true
+    },
+    headers: {
       "Content-Type": "application/json"
     },
-    defaultHandler: ({ context }) => context.ok("default"),
-    defaultErrorHandler: ({ context }) => context.error("error"),
+    handler: ({ ok }) => ok("default"),
+    errorHandler: ({ error }) => error("error"),
   },
   logger: {
     dir: path.resolve(__dirname, "../logs"),
   },
   server: {
     host: "localhost",
-    port: 3000,
+    port: 3030,
     ssl: {}
   }
 }
@@ -58,9 +61,11 @@ module.exports = {
 Конфигурация имеет основные секции
 ```
 router - Конфигурация роутера
-  defaultHeaders - HTTP заголовки ответа по умолчанию
-  defaultHandler - Обработчик успешных запросов к модулю по умолчанию
-  defaultErrorHandler - Обработчик неудачных запросов к модулю по умолчанию
+  options - опции маршрутов по умолчанию
+    jsonResponse - отдавать тело ответа в формате JSON
+  headers - HTTP заголовки ответа по умолчанию
+  handler - Обработчик успешных запросов к модулю по умолчанию
+  errorHandler - Обработчик неудачных запросов к модулю по умолчанию
 
 logger - Конфигурация логгера
   dir - Директория для логов
@@ -81,8 +86,8 @@ module.exports = [
       {
         method: "GET", 
         path: "/", 
-        handler: ({ context }) => context.ok("Hello World!"),
-        errorHandler: ({ context }) => context.error("Goodbye World!"),
+        handler: ({ ok }) => ok("Hello World!"),
+        errorHandler: ({ error }) => error("Goodbye World!"),
       },
     ]
   ]
