@@ -6,6 +6,9 @@ const { formatDate, formatters } = require("./utils/date.util")
  * Логгер
  */
 class Logger {
+  // Группа по умолчанию
+  static DEFAULT_GROUP = "unknown"
+
   // Уровни логирования
   static LEVEL_INFO = "info"
   static LEVEL_ERROR = "error"

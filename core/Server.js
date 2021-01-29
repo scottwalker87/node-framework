@@ -1,39 +1,36 @@
-const EventEmitter = require("events")
 const http = require("http")
 const https = require("https")
 
 /**
- * Сервер
+ * HTTP/HTTPS сервер
  */
-class Server extends EventEmitter {
+class Server {
   // Порт по умолчанию
   static DEFAULT_HOST = "localhost"
-  static DEFAULT_PORT = 3000
+  static DEFAULT_PORT = 3030
 
   // Коды ответа сервера
   static STATUS_OK = 200
   static STATUS_NOT_FOUND = 404
   static STATUS_ERROR = 500
 
-  // Уровни логирования
-  static LOGGER_LEVEL_INFO = "info"
-  static LOGGER_LEVEL_ERROR = "error"
-
-  // Заголовки
-  static HEADER_CONTENT_TYPE = "content-type"
-
-  // MIME типы
-  static MIME_TYPE_JSON = "application/json"
-
   /**
    * Инициализировать сервер
+   * @param {Object} eventBus 
    * @param {Function} handler 
    * @param {Object} config 
    */
-  constructor(handler, config) {
-    super()
-    
-    this.handler = handler || this.defaultRequestHandler
+  constructor(eventBus, handler, config) {
+    // Проверки на наличие обязательных параметров
+    if (!eventBus) {
+      throw "Server: Необходимо передать шину событий (параметр eventBus)"
+    }
+    if (!handler) {
+      throw "Server: Необходимо передать обработчик запросов (параметр handler)"
+    }
+
+    this.eventBus = eventBus
+    this.handler = handler
     this.config = config || {}
     this.server = this.httpDriver.createServer(this.requestHandler.bind(this))
   }
@@ -52,14 +49,6 @@ class Server extends EventEmitter {
    */
   get httpDriver() {
     return this.isHTTPS ? https : http
-  }
-
-  /**
-   * Обработчик запросов по умолчанию
-   * @return {Function}
-   */
-  get defaultRequestHandler() {
-    return (request, response) => response.end()
   }
 
   /**
@@ -87,10 +76,10 @@ class Server extends EventEmitter {
   }
 
   /**
-   * URL
+   * Origin
    * @return {String}
    */
-  get url() {
+  get origin() {
     return `${this.protocol}://${this.host}:${this.port}`
   }
 
@@ -102,7 +91,7 @@ class Server extends EventEmitter {
       this.server.listen(this.port, this.host, () => {
         
         // Логировать новый статус сервера
-        this.log(Server.LOGGER_LEVEL_INFO, `Сервер запущен на ${this.url}`)
+        this.logInfo(`Сервер запущен на ${this.origin}`)
         
         resolve()
       })
@@ -117,7 +106,7 @@ class Server extends EventEmitter {
       this.server.close(() => {
         
         // Логировать новый статус сервера
-        this.log(Server.LOGGER_LEVEL_INFO, "Сервер остоновлен")
+        this.logInfo("Сервер остоновлен")
 
         resolve()
       })
@@ -131,9 +120,10 @@ class Server extends EventEmitter {
    */
   requestHandler(request, response) {
     const headers = request.headers || {}
-    const method = request.method
+    const method = request.method || ""
     const url = new URL(`${this.protocol}://${headers.host}${request.url}`)
-    
+
+    // Тело запроса
     let body = ""
 
     // Слушать событие передачи тела запроса 
@@ -142,21 +132,13 @@ class Server extends EventEmitter {
     // Слушать событие ошибки запроса
     request.on("error", error => {
       // Логировать ошибку парсинга тела запроса
-      this.log(Server.LOGGER_LEVEL_ERROR, `Ошибка ${method} запроса ${url}`, { method, url, headers, body, error })
+      this.logError(`Ошибка ${method} запроса ${url}`, { method, url, headers, body, error })
     })
 
     // Слушать событие завершения запроса
     request.on("end", () => {
-      try {
-        // Парсить тело запроса
-        body = this.parseBody(headers, body)
-      } catch (error) {
-        // Логировать ошибку парсинга тела запроса
-        this.log(Server.LOGGER_LEVEL_ERROR, `Невалидное тело ${method} запроса ${url}`, { method, url, headers, body, error })
-      }
-
       // Логировать запрос
-      this.log(Server.LOGGER_LEVEL_INFO, `${method} запрос ${url}`, { method, url, headers, body })
+      this.logInfo(`${method} запрос ${url}`, { method, url, headers, body })
 
       // Вызвать обработчик
       this.handler.call(null, { request, response, method, url, headers, body })
@@ -164,33 +146,25 @@ class Server extends EventEmitter {
   }
 
   /**
-   * Парсить тело запроса
-   * @param {Object} headers 
-   * @param {String} body 
-   * @return {*}
-   */
-  parseBody(headers, body) {
-    const isContentTypeJson = Object.entries(headers).some(([key, value]) => {
-      return key.toLowerCase() === Server.HEADER_CONTENT_TYPE && value.toLowerCase().includes(Server.MIME_TYPE_JSON)
-    })
-
-    return isContentTypeJson ? JSON.parse(body) : body
-  }
-
-  /**
-   * Логировать
-   * @param {String} type 
+   * Логировать данные
    * @param {String} title 
    * @param {*} data 
    */
-  log(level, title, data = {}) {
-    this.emit("log", { level, title, data })
+  logInfo(title, data = {}) {
+    this.eventBus.emit("log:info", { group: "server", title, data })
 
-    if (level === Server.LOGGER_LEVEL_ERROR) {
-      console.error({ title, data })
-    } else {
-      console.log(title)
-    }
+    console.log("Server log:", title)
+  }
+
+  /**
+   * Логировать данные об ошибке
+   * @param {String} title 
+   * @param {*} data 
+   */
+  logError(title, data = {}) {
+    this.eventBus.emit("log:info", { group: "server", title, data })
+
+    console.error("Server error log:", title)
   }
 }
 
