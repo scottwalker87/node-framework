@@ -2,6 +2,7 @@ const Router = require("./Router")
 const Server = require("./Server")
 const Logger = require("./Logger")
 const EventBus = require("./EventBus")
+const Context = require("./Context")
 
 /**
  * Приложение
@@ -20,7 +21,8 @@ class Application {
     this.modules = modules || []
     this.eventBus = new EventBus()
     this.router = new Router(this.routes, this.routerConfig)
-    this.server = new Server(this.serverHandler.bind(this), this.serverConfig)
+    this.server = new Server(this.eventBus, this.serverHandler.bind(this), this.serverConfig)
+    this.context = new Context(this.eventBus)
     this.logger = new Logger(this.loggerConfig)
 
     // Установить слушателей событий
@@ -29,9 +31,26 @@ class Application {
 
   /**
    * Запустить приложение
+   * @return {Promise}
    */
   run() {
-    this.server.start()
+    return new Promise(async resolve => {
+      await this.server.start()
+
+      resolve()
+    })
+  }
+
+  /**
+   * Убить приложение
+   * @return {Promise}
+   */
+  kill() {
+    return new Promise(async resolve => {
+      await this.server.stop()
+
+      resolve()
+    })
   }
 
   /**
@@ -42,8 +61,8 @@ class Application {
     const config = this.config.router || {}
 
     return {
-      defaultHandler: context => context.ok(),
-      defaultErrorHandler: context => context.error(),
+      handler: ({ ok }) => ok(),
+      errorHandler: ({ error }) => error(),
 
       ...config
     }
@@ -94,107 +113,21 @@ class Application {
    * @param {*} body 
    */
   serverHandler({ request, response, method, url, headers, body }) {
-    const host = url.hostname
-    const path = url.pathname
-    const route = this.router.getRoute(method, host, path)
-    const queryParams = Object.fromEntries(url.searchParams)
-    const context = this.getContext({ route, request, response })
-    const data = { 
-      route, 
+    const route = this.router.getRoute(method, url)
+    const context = this.context.create({ 
+      route,
       request, 
-      response,
-      context,
+      response, 
       headers,
-      params: route.params,
-      queryParams,
-      body,
-      url
-    }
+      body
+    })
 
     try {
       // Обработать успешный запрос
-      route.handler(data)
+      route.handler(context)
     } catch {
       // Обработать запрос с ошибкой
-      route.errorHandler(data)
-    }
-  }
-
-  /**
-   * Получить контекст для обработчика 
-   * @param {Object} { route, request, response } 
-   * @return {Object}
-   */
-  getContext({ route, request, response }) {
-    /**
-     * Отправить ответ
-     * @param {Number} code код ответа
-     * @param {*} data тело ответа
-     * @param {Object} headers заголовки
-     */
-    const send = (code, data, headers) => {
-      const routeHeaders = route.headers || {}
-
-      // Отправить заголовки
-      response.writeHead(code, { ...routeHeaders, ...headers })
-
-      // Отправить тело
-      if (data) {
-        response.end(JSON.stringify(data))
-      } else {
-        response.end()
-      }
-    }
-
-    return {
-      /**
-       * Положительный ответ
-       * @param {*} data тело ответа
-       * @param {Object} headers заголовки
-       */
-      ok: (data, headers) => send(Server.STATUS_OK, data, headers),
-
-      /**
-       * Ответ "ресурс не найден"
-       * @param {*} data тело ответа
-       * @param {Object} headers заголовки
-       */
-      notFound: (data, headers) => send(Server.STATUS_NOT_FOUND, data, headers),
-
-      /**
-       * Ответ "ошибка сервера" 
-       * @param {*} data тело ответа
-       * @param {Object} headers заголовки
-       */
-      error: (data, headers) => send(Server.STATUS_ERROR, data, headers),
-
-      /**
-       * Подписаться на событие из шины событий
-       * @param {String} event название события
-       * @param {Function} callback функция обратного вызова
-       */
-      on: (event, callback) => this.eventBus.on(event, callback),
-
-      /**
-       * Инициировать событие из шины событий
-       * @param {String} event название события
-       * @param {*} data дапнные
-       */
-      emit: (event, ...data) => this.eventBus.emit(event, ...data),
-
-      /**
-       * Логировать информацию
-       * @param {String} title 
-       * @param {*} data 
-       */
-      logInfo: (title, data) => this.logger.info(route.moduleId, title, data),
-
-      /**
-       * Логировать ошибку
-       * @param {String} title 
-       * @param {*} data 
-       */
-      logError: (title, data) => this.logger.error(route.moduleId, title, data),
+      route.errorHandler(context)
     }
   }
 
@@ -202,10 +135,22 @@ class Application {
    * Установить слушателей событий
    */
   setListeners() {
-    // Слушать логирование сервера
-    this.server.on("log", ({ level, title, data }) => {
-      this.logger.log(Application.LOGGER_GROUP_SERVER, title, data, level)
-    })
+    // Слушать события логирования
+    this.eventBus.on("log:info", params => this.log({ ...params, level: Logger.LEVEL_INFO }))
+    this.eventBus.on("log:error", params => this.log({ ...params, level: Logger.LEVEL_ERROR }))
+  }
+
+  /**
+   * Логировать
+   * @param {Object} params 
+   */
+  log({ group, level, title, data }) {
+    group = group || Logger.DEFAULT_GROUP
+    level = level || Logger.LEVEL_INFO
+    title = title || ""
+    data = data || {}
+
+    this.logger.log(group, title, data, level)
   }
 }
 
