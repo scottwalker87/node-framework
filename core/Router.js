@@ -1,3 +1,5 @@
+const { URL } = require("url")
+
 /**
  * Роутер
  */
@@ -13,11 +15,19 @@ class Router {
   }
 
   /**
+   * Опции по умолчанию
+   * @return {Object}
+   */
+  get defaultOptions() {
+    return this.config.options || {}
+  }
+
+  /**
    * Заголовки по умолчанию
    * @return {Object}
    */
   get defaultHeaders() {
-    return this.config.defaultHeaders || {}
+    return this.config.headers || {}
   }
 
   /**
@@ -25,7 +35,7 @@ class Router {
    * @return {Function}
    */
   get defaultHandler() {
-    return this.config.defaultHandler || (() => {})
+    return this.config.handler || (() => {})
   }
 
   /**
@@ -33,64 +43,80 @@ class Router {
    * @return {Function}
    */
   get defaultErrorHandler() {
-    return this.config.defaultErrorHandler || (() => {})
+    return this.config.errorHandler || (() => {})
   }
 
   /**
    * Получить маршрут
    * @param {String} method 
-   * @param {String} host 
-   * @param {String} path 
+   * @param {URL} url 
    * @return {Object}
    */
-  getRoute(method, host, path) {
+  getRoute(method, url) {
+    const isCorrectUrl = url instanceof URL
+
+    // Проверить URL на корректность
+    if (!isCorrectUrl) {
+      throw "Передан некорректный URL"
+    }
+
+    // Нормализовать метод
     method = String(method).toUpperCase()
-    host = String(host).toLowerCase()
-    path = String(path).toLowerCase()
+
+    // Получить запрашиваемый путь
+    const path = String(url.pathname).toLowerCase()
 
     // Найти первый подходящий маршрут
-    const route = this.routes.find(route => {
-      /**
-       * Сопоставить метод
-       * @return {Boolean}
-       */
-      const matchMethod = () => { 
-        const compare = comparedMethod => String(comparedMethod).toUpperCase() === method
-
-        // Если задан массив доступных методов
-        if (route.method instanceof Array) {
-          return route.method.some(compare)
-        } else {
-          return compare(route.method)
-        }
-      }
-
-        /**
-       * Сопоставить хост
-       * @return {Boolean}
-       */
-      const matchHost = () => !route.host || String(route.host).toLowerCase() === host
-
-      /**
-       * Сопоставить путь
-       * @return {Boolean}
-       */
-      const matchPath = () => new RegExp(`^${route.path}$`).test(path)
-
-      // Если совпадают и метод и путь
-      return matchMethod() && matchHost() && matchPath()
-    })
+    const route = this.findRoute(method, path)
 
     // Если маршрут найден
     if (route) {
+      // Получить параметры маршрута
       const params = this.getPathParams(path, route.path)
 
       // Вернуть маршрут
-      return this.normalizeRoute({ ...route, method, host, path, params })
+      return this.normalizeRoute({ ...route, method, path, params, url })
     }
 
     // Вернуть маршрут по умолчанию
-    return this.normalizeRoute({ method, host, path })
+    return this.normalizeRoute({ method, path, url })
+  }
+
+  /**
+   * Найти маршрут
+   * @param {String} method метод запроса 
+   * @param {String} path путь запроса
+   * @return {Object|undefined}
+   */
+  findRoute(method, path) {
+    /**
+     * Сопоставить метод
+     * @return {Boolean}
+     */
+    const matchMethod = routeMethod => { 
+      /**
+       * Сравнить метод с запрашиваемым методом
+       * @param {String} comparedMethod 
+       * @return {Boolean}
+       */
+      const compare = comparedMethod => String(comparedMethod).toUpperCase() === method
+        
+      // Если задан массив доступных методов
+      if (routeMethod instanceof Array) {
+        return routeMethod.some(compare)
+      } else {
+        return compare(routeMethod)
+      }
+    }
+
+    /**
+     * Сопоставить путь
+     * @return {Boolean}
+     */
+    const matchPath = routePath => new RegExp(`^${routePath}$`).test(path)
+
+    // Найти маршрут по совпадениям метода запроса и его пути
+    return this.routes.find(route => matchMethod(route.method) && matchPath(route.path))
   }
 
   /**
@@ -99,15 +125,16 @@ class Router {
    * @return {Object}
    */
   normalizeRoute(route) {
+    const options = route.options || this.defaultOptions
     const headers = route.headers || this.defaultHeaders
     const handler = route.handler || this.defaultHandler
     const errorHandler = route.errorHandler || this.defaultErrorHandler
     const method = route.method || ""
-    const host = route.host || ""
     const path = route.path || ""
     const params = route.params || {}
+    const url = route.url || {}
 
-    return { ...route, headers, method, host, path, params, handler, errorHandler }
+    return { ...route, options, headers, method, path, params, url, handler, errorHandler }
   }
 
   /**
