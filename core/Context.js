@@ -16,6 +16,17 @@ class Context {
   }
 
   /**
+   * Выполнить обработчик в контексте
+   * @param {Function} handler обработчик
+   * @param {Object} data данные для создания контекста
+   */
+  run(handler, data) {
+    const context = this.create(data)
+
+    handler.call(null, context)
+  }
+
+  /**
    * Создать контекст
    * @param {Object} params параметры контекста 
    * @return {Object} контекст
@@ -75,6 +86,8 @@ class Context {
       queryParams,
       routeParams,
       bodyParams: getBodyParams(),
+      headers,
+      body,
 
       /**
        * Положительный ответ

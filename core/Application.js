@@ -8,9 +8,6 @@ const Context = require("./Context")
  * Приложение
  */
 class Application {
-  // Группы логирования
-  static LOGGER_GROUP_SERVER = "server"
-
   /**
    * Инициализировать приложение
    * @param {Array} modules 
@@ -114,20 +111,14 @@ class Application {
    */
   serverHandler({ request, response, method, url, headers, body }) {
     const route = this.router.getRoute(method, url)
-    const context = this.context.create({ 
-      route,
-      request, 
-      response, 
-      headers,
-      body
-    })
+    const data = { route, request, response, headers, body }
 
     try {
       // Обработать успешный запрос
-      route.handler(context)
+      this.context.run(route.handler, data)
     } catch {
       // Обработать запрос с ошибкой
-      route.errorHandler(context)
+      this.context.run(route.errorHandler, data)
     }
   }
 
