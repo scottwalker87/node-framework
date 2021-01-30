@@ -1,9 +1,17 @@
+const errorHandler = require("./handlers/error")
+
 module.exports = [
   {
     method: "GET", 
     path: "/", 
     handler: require("./handlers/main"),
-    errorHandler: require("./handlers/error")
+    errorHandler
+  },
+  {
+    method: "GET", 
+    path: "hello/(?<name>\\w+)", 
+    handler: require("./handlers/hello"),
+    errorHandler
   },
   // { 
   //   method: "GET", 

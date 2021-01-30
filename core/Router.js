@@ -47,6 +47,24 @@ class Router {
   }
 
   /**
+   * Нормализовать путь
+   * @param {String} path 
+   * @return {String}
+   */
+  normalizePath(path) {
+    return path.startsWith("/") ? path : `/${path}`
+  }
+
+  /**
+   * Сделать регулярное выражение
+   * @param {String} path 
+   * @return {RegExp}
+   */
+  makePathExpression(path) {
+    return new RegExp(`^${this.normalizePath(path)}$`)
+  }
+
+  /**
    * Получить маршрут
    * @param {String} method 
    * @param {URL} url 
@@ -61,10 +79,10 @@ class Router {
     }
 
     // Нормализовать метод
-    method = String(method).toUpperCase()
+    method = method.toUpperCase()
 
     // Получить запрашиваемый путь
-    const path = String(url.pathname).toLowerCase()
+    const path = this.normalizePath(url.pathname).toLowerCase()
 
     // Найти первый подходящий маршрут
     const route = this.findRoute(method, path)
@@ -72,7 +90,7 @@ class Router {
     // Если маршрут найден
     if (route) {
       // Получить параметры маршрута
-      const params = this.getPathParams(path, route.path)
+      const params = this.getRouteParams(path, route.path)
 
       // Вернуть маршрут
       return this.normalizeRoute({ ...route, method, path, params, url })
@@ -90,17 +108,17 @@ class Router {
    */
   findRoute(method, path) {
     /**
+     * Сравнить метод с запрашиваемым методом
+     * @param {String} comparedMethod 
+     * @return {Boolean}
+     */
+    const compare = comparedMethod => String(comparedMethod).toUpperCase() === method
+
+    /**
      * Сопоставить метод
      * @return {Boolean}
      */
     const matchMethod = routeMethod => { 
-      /**
-       * Сравнить метод с запрашиваемым методом
-       * @param {String} comparedMethod 
-       * @return {Boolean}
-       */
-      const compare = comparedMethod => String(comparedMethod).toUpperCase() === method
-        
       // Если задан массив доступных методов
       if (routeMethod instanceof Array) {
         return routeMethod.some(compare)
@@ -113,7 +131,7 @@ class Router {
      * Сопоставить путь
      * @return {Boolean}
      */
-    const matchPath = routePath => new RegExp(`^${routePath}$`).test(path)
+    const matchPath = routePath => this.makePathExpression(routePath).test(path)
 
     // Найти маршрут по совпадениям метода запроса и его пути
     return this.routes.find(route => matchMethod(route.method) && matchPath(route.path))
@@ -143,8 +161,8 @@ class Router {
    * @param {String} pattern 
    * @return {Object}
    */
-  getPathParams(path, pattern) {
-    const { groups, index, input, ...matches } = path.match(new RegExp(`^${pattern}$`))
+  getRouteParams(path, pattern) {
+    const { groups, index, input, ...matches } = path.match(this.makePathExpression(pattern))
     const params = groups || {}
     const indexedParams = Object.values(matches)
 
