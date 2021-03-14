@@ -22,27 +22,14 @@ class Context {
   }
 
   /**
-   * URL маршрута
-   * @return {Object}
-   */
-  get url() {
-    return this.route.url || {}
-  }
-
-  /**
-   * GET параметры запроса
-   * @return {Object}
-   */
-  get queryParams() {
-    return this.url.searchParams ? Object.fromEntries(this.url.searchParams) : {}
-  }
-
-  /**
    * Параметры маршрута (полученные вследствие парсинга маршрута роутером)
    * @return {Object}
    */
-  get routeParams() {
-    return this.route.params || {}
+  get params() {
+    const queryParams = this.request.queryParams || {}
+    const routeParams = this.route.params || {}
+
+    return { ...routeParams, ...queryParams }
   }
 }
 

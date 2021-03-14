@@ -14,6 +14,14 @@ class Request {
   }
 
   /**
+   * Метод запроса
+   * @return {String}
+   */
+  get method() {
+    return this.incomingMessage.method
+  }
+
+  /**
    * URL запроса
    * @return {String}
    */
@@ -62,11 +70,11 @@ class Request {
   }
 
   /**
-   * Метод запроса
-   * @return {String}
+   * GET параметры запроса
+   * @return {Object}
    */
-  get method() {
-    return this.incomingMessage.method
+  get queryParams() {
+    return this.url.searchParams ? Object.fromEntries(this.url.searchParams) : {}
   }
 
   /**
