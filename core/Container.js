@@ -1,7 +1,7 @@
 /**
  * Контейнер зависимостей
  */
-class Container {
+ class Container {
   // Признак того, что параметр для конструктора класса является зависимостью
   static PARAM_DEPENDENCY_SIGN = "@"
 
@@ -30,9 +30,9 @@ class Container {
    */
   get context() {
     return {
-      [Container.MEHTOD_INVOKE]: this.invoke,
-      [Container.MEHTOD_MAKE]: this.make,
-      [Container.MEHTOD_FROM]: this.from,
+      [Container.MEHTOD_INVOKE]: this.invoke.bind(this),
+      [Container.MEHTOD_MAKE]: this.make.bind(this),
+      [Container.MEHTOD_FROM]: this.from.bind(this),
     }
   }
 
@@ -84,6 +84,9 @@ class Container {
     if (!instruction) {
       throw `Завсисимость по адресу "${address}" не найдена в контейнере`
     }
+    if (!instruction.from) {
+      throw `Не указан источник зависимости по адресу "${address}"`
+    }
 
     return instruction
   }
@@ -116,12 +119,7 @@ class Container {
 
     const instruction = this.get(address)
     const instructionParams = instruction.params || {}
-    const dependencyParams = { ...instructionParams, ...params }
-
-    if (!instruction.from) {
-      throw `Не указан источник зависимости по адресу "${address}"`
-    }
-
+    const dependencyParams = this.parseParams({ ...instructionParams, ...params })
     const constructorParams = this.parseConstructorParams(instruction.from).map(arg => {
       return dependencyParams[arg] || undefined
     })
@@ -137,10 +135,6 @@ class Container {
   from(address) {
     const instruction = this.get(address)
 
-    if (!instruction.from) {
-      throw `Не указан источник зависимости по адресу "${address}"`
-    }
-
     return instruction.from
   }
 
@@ -152,7 +146,7 @@ class Container {
   parseParams(paramsMap) {
     const params = {}
 
-    for (const [key, value] of Object.entries(paramsMap)) {
+    for (let [key, value] of Object.entries(paramsMap)) {
       // Если в ключе параметра найден признак зависимости
       if (key.startsWith(Container.PARAM_DEPENDENCY_SIGN)) {
 
