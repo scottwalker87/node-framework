@@ -1,54 +1,42 @@
+const EventEmitter = require("events")
 const http = require("http")
 const https = require("https")
 
 /**
  * HTTP/HTTPS сервер
  */
-class Server {
-  // Порт по умолчанию
+class Server extends EventEmitter {
+  // Значения по умолчанию
   static DEFAULT_HOST = "localhost"
   static DEFAULT_PORT = 3030
 
-  // Коды ответа сервера
-  static STATUS_OK = 200
-  static STATUS_NOT_FOUND = 404
-  static STATUS_ERROR = 500
-
   /**
    * Инициализировать сервер
-   * @param {Object} eventBus 
-   * @param {Function} handler 
+   * @param {Object} container 
    * @param {Object} config 
    */
-  constructor(eventBus, handler, config) {
-    // Проверки на наличие обязательных параметров
-    if (!eventBus) {
-      throw "Server: Необходимо передать шину событий (параметр eventBus)"
-    }
-    if (!handler) {
-      throw "Server: Необходимо передать обработчик запросов (параметр handler)"
-    }
+  constructor(container, config) {
+    super()
 
-    this.eventBus = eventBus
-    this.handler = handler
+    this.container = container
     this.config = config || {}
-    this.server = this.httpDriver.createServer(this.requestHandler.bind(this))
+    this.server = this.driver.createServer(this.handler.bind(this))
   }
 
   /**
-   * Сервер слушает HTTPS соединение
+   * Сервер слушает SSL соединение
    * @return {Boolean}
    */
-  get isHTTPS() {
-    return (this.config.ssl && this.config.ssl.enable) || false
+  get isSSL() {
+    return (this.config.ssl && Object.keys(this.config.ssl).length) || false
   }
 
   /**
    * Драйвер обработки соединения 
    * @return {Object}
    */
-  get httpDriver() {
-    return this.isHTTPS ? https : http
+  get driver() {
+    return this.isSSL ? https : http
   }
 
   /**
@@ -56,7 +44,7 @@ class Server {
    * @return {String}
    */
   get protocol() {
-    return this.isHTTPS ? "https" : "http"
+    return this.isSSL ? "https" : "http"
   }
 
   /**
@@ -89,11 +77,15 @@ class Server {
   start() {
     return new Promise(resolve => {
       this.server.listen(this.port, this.host, () => {
+        const message = `Сервер запущен на ${this.origin}`
         
         // Логировать новый статус сервера
-        this.logInfo(`Сервер запущен на ${this.origin}`)
+        this.logInfo(message)
         
-        resolve()
+        // Инициировать событие запуска сервера
+        this.emit("start", message, this.port, this.host)
+
+        resolve(message)
       })
     })
   }
@@ -104,68 +96,70 @@ class Server {
   stop() {
     return new Promise(resolve => {
       this.server.close(() => {
+        const message = "Сервер остоновлен"
         
         // Логировать новый статус сервера
-        this.logInfo("Сервер остоновлен")
+        this.logInfo(message)
 
-        resolve()
+        // Инициировать событие остоновки сервера
+        this.emit("stop", message)
+
+        resolve(message)
       })
     })
   }
 
   /**
    * Обработчик запросов
-   * @param {Object} request 
-   * @param {Object response 
+   * @param {Object} incomingMessage 
+   * @param {Object} serverResponse 
    */
-  requestHandler(request, response) {
-    const headers = request.headers || {}
-    const method = request.method || ""
-    const url = new URL(`${this.protocol}://${headers.host}${request.url}`)
+  async handler(incomingMessage, serverResponse) {
+    // Создать объект запроса
+    const request = this.container.make("core/Request", { origin: this.origin, incomingMessage })
 
-    // Тело запроса
-    let body = ""
+    // Создать объект ответа
+    const response = this.container.make("core/Response", { serverResponse })
 
-    // Слушать событие передачи тела запроса 
-    request.on("data", data => { body += data })
+    try {
+      // Завершить запрос
+      const data = await request.complete()
 
-    // Слушать событие ошибки запроса
-    request.on("error", error => {
-      // Логировать ошибку парсинга тела запроса
-      this.logError(`Ошибка ${method} запроса ${url}`, { method, url, headers, body, error })
-    })
-
-    // Слушать событие завершения запроса
-    request.on("end", () => {
       // Логировать запрос
-      this.logInfo(`${method} запрос ${url}`, { method, url, headers, body })
+      this.logInfo(`${data.method} запрос ${data.url}`, data)
 
       // Вызвать обработчик
-      this.handler.call(null, { request, response, method, url, headers, body })
-    })
+      this.emit("handle", request, response)
+    } catch (data) {
+
+      // Логировать ошибку парсинга тела запроса
+      // this.logError(`Ошибка ${data.method} запроса ${data.url}`, data)
+    }
   }
 
   /**
    * Логировать данные
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    */
-  logInfo(title, data = {}) {
-    this.eventBus.emit("log:info", { group: "server", title, data })
+  logInfo(message, data = {}) {
+    this.emit("log", message, data)
+    this.emit("log:info", message, data)
 
-    console.log("Server log:", title)
+    // console.log("Server log:", message)
   }
 
   /**
    * Логировать данные об ошибке
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    */
-  logError(title, data = {}) {
-    this.eventBus.emit("log:info", { group: "server", title, data })
+  // logError(message, data = {}) {
+  //   this.emit("log", message, data)
+  //   this.emit("log:error", message, data)
 
-    console.error("Server error log:", title)
-  }
+  //   console.error("Server error log:", message)
+  // }
 }
 
 module.exports = Server

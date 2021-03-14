@@ -1,5 +1,3 @@
-const { URL } = require("url")
-
 /**
  * Роутер
  */
@@ -35,7 +33,7 @@ class Router {
    * @return {Function}
    */
   get defaultHandler() {
-    return this.config.handler || (() => {})
+    return this.config.handler || (({ response }) => response.ok())
   }
 
   /**
@@ -43,7 +41,7 @@ class Router {
    * @return {Function}
    */
   get defaultErrorHandler() {
-    return this.config.errorHandler || (() => {})
+    return this.config.errorHandler || (({ response }) => response.error())
   }
 
   /**
@@ -66,23 +64,15 @@ class Router {
 
   /**
    * Получить маршрут
-   * @param {String} method 
-   * @param {URL} url 
+   * @param {Object} request 
    * @return {Object}
    */
-  getRoute(method, url) {
-    const isCorrectUrl = url instanceof URL
-
-    // Проверить URL на корректность
-    if (!isCorrectUrl) {
-      throw "Передан некорректный URL"
-    }
-
+  getRoute(request) {
     // Нормализовать метод
-    method = method.toUpperCase()
-
+    const method = request.method.toUpperCase()
+    
     // Получить запрашиваемый путь
-    const path = this.normalizePath(url.pathname).toLowerCase()
+    const path = this.normalizePath(request.path).toLowerCase()
 
     // Найти первый подходящий маршрут
     const route = this.findRoute(method, path)
@@ -93,11 +83,11 @@ class Router {
       const params = this.getRouteParams(path, route.path)
 
       // Вернуть маршрут
-      return this.normalizeRoute({ ...route, method, path, params, url })
+      return this.normalizeRoute({ ...route, method, path, params })
     }
 
     // Вернуть маршрут по умолчанию
-    return this.normalizeRoute({ method, path, url })
+    return this.normalizeRoute({ method, path })
   }
 
   /**
@@ -143,16 +133,16 @@ class Router {
    * @return {Object}
    */
   normalizeRoute(route) {
-    const options = route.options || this.defaultOptions
-    const headers = route.headers || this.defaultHeaders
+    const options = { ...this.defaultOptions, ...(route.options || {}) }
+    const headers = { ...this.defaultHeaders, ...(route.headers || {}) }
     const handler = route.handler || this.defaultHandler
     const errorHandler = route.errorHandler || this.defaultErrorHandler
     const method = route.method || ""
     const path = route.path || ""
     const params = route.params || {}
-    const url = route.url || {}
-
-    return { ...route, options, headers, method, path, params, url, handler, errorHandler }
+    const id = `${method}.${path}`
+    
+    return { ...route, options, headers, handler, errorHandler, method, path, params, id }
   }
 
   /**

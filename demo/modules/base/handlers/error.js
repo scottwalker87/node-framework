@@ -2,6 +2,6 @@
  * Обработчик ошибок в базовом модуле
  * @param {Object} context 
  */
-module.exports = ({ error }) => {
-  error({ message: "Error of base module" })
+module.exports = async ({ response }) => {
+  response.error({ message: "Error of base module" })
 }

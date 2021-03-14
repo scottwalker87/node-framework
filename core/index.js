@@ -1,6 +1,10 @@
+// Контейнер зависимостей
+const Container = require("./Container")
+
 // Приложение
 const Application = require("./Application")
-// Утилиты
-const utils = require("./utils")
 
-module.exports = { Application, utils }
+// Модуль приложения
+const Module = require("./Module")
+
+module.exports = { Container, Application, Module }

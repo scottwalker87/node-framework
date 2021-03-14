@@ -8,8 +8,8 @@ module.exports = {
     headers: {
       "Content-Type": "application/json"
     },
-    handler: ({ ok }) => ok("default"),
-    errorHandler: ({ error }) => error("error"),
+    handler: ({ response }) => response.error("error"),
+    errorHandler: ({ response }) => response.error("error"),
   },
   logger: {
     dir: path.resolve(__dirname, "../logs"),
@@ -17,8 +17,6 @@ module.exports = {
   server: {
     host: "localhost",
     port: 3030,
-    ssl: {
-      enable: false
-    }
+    ssl: {}
   }
 }

@@ -1,7 +1,9 @@
+const { Module } = require("@scottwalker/node-framework")
+
 /**
  * Базовый модуль
  */
-module.exports = {
-  id: "base",
-  routes: require("./routes")
-}
+module.exports = new Module("base", {
+  routes: require("./routes"),
+  dependencies: require("./dependencies")
+})

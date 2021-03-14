@@ -1,11 +1,9 @@
-const User = require("../models/User")
-
 /**
  * Обработчик hello
  * @param {Object} context 
  */
-module.exports = ({ ok, routeParams: { name } }) => {
-  const user = new User(name)
+module.exports = async ({ container, response, routeParams: { name } }) => {
+  const user = container.make("base/models/User", { name })
 
-  ok({ message: `Hello ${user.name}`})
+  response.ok({ message: `Hello, ${user.name}!`})
 }

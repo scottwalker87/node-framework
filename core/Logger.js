@@ -1,14 +1,10 @@
 const fs = require("fs")
 const path = require("path")
-const { formatDate, formatters } = require("./utils/date.util")
 
 /**
  * Логгер
  */
 class Logger {
-  // Группа по умолчанию
-  static DEFAULT_GROUP = "unknown"
-
   // Уровни логирования
   static LEVEL_INFO = "info"
   static LEVEL_ERROR = "error"
@@ -33,31 +29,36 @@ class Logger {
    * @return {String}
    */
   get currentDate() {
-    const handler = this.config.dateFormat instanceof Function ? this.config.dateFormat : formatters.full
+    const date = new Date()
+    const handler = this.config.dateFormat instanceof Function ? this.config.dateFormat : null
 
-    return formatDate(new Date(), handler)
+    if (handler) {
+      return handler(date)
+    }
+
+    return date.toLocaleString()
   }
   
   /**
    * Сформировать строку лога
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    */
-  makeLine(title, data = null) {
-    const text = data ? JSON.stringify(data, null, "  ") : null
-    const info = text ? `${title}\r\n${text}\r\n\r\n` : `${title}\r\n\r\n`
+  makeLine(message, data = null) {
+    const description = data ? JSON.stringify(data, null, "  ") : null
+    const content = description ? `${message}\r\n${description}\r\n\r\n` : `${message}\r\n\r\n`
 
-    return `${this.currentDate} - ${info}`
+    return `${this.currentDate} - ${content}`
   }
 
   /**
    * Логировать
    * @param {String} group 
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    * @param {String} level 
    */
-  log(group, title, data = null, level = Logger.LEVEL_INFO) {
+  log(group, message, data = null, level = Logger.LEVEL_INFO) {
     // Если указана директория для логов
     if (this.dir) {
       // Проверить директорию на доступность к записи
@@ -67,7 +68,7 @@ class Logger {
           console.error(`Директория ${this.dir} не доступна для записи`)
         } else {
           const file = path.resolve(this.dir, `${group}.${level}.log`)
-          const line = this.makeLine(title, data)
+          const line = this.makeLine(message, data)
   
           // Записать лог в файл
           fs.writeFile(file, line, { flag: "a" }, writeError => {
@@ -84,21 +85,25 @@ class Logger {
   /**
    * Логировать информацию
    * @param {String} group 
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    */
-  info(group, title, data) {
-    this.log(group, title, data, Logger.LEVEL_INFO)
+  info(group, message, data) {
+    this.log(group, message, data, Logger.LEVEL_INFO)
+
+    console.log("Info:", group, message)
   }
 
   /**
    * Логировать ошибку
    * @param {String} group 
-   * @param {String} title 
+   * @param {String} message 
    * @param {*} data 
    */
-  error(group, title, data) {
-    this.log(group, title, data, Logger.LEVEL_ERROR)
+  error(group, message, data) {
+    this.log(group, message, data, Logger.LEVEL_ERROR)
+
+    console.error("Error:", group, message)
   }
 }
 
