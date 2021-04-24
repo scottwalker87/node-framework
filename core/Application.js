@@ -89,47 +89,53 @@ class Application {
   get coreDependencies() {
     return {
       // Логгер приложения
-      "core/Logger": { 
-        from: require("./Logger"),
-        params: { 
-          config: this.config.logger || {}
-        } 
+      "core/Logger": () => {
+        const Logger = require("./Logger")
+        const config = this.config.logger || {}
+
+        return new Logger(config)
       },
 
       // Роутер приложения
-      "core/Router": { 
-        from: require("./Router"), 
-        params: { 
-          routes: this.routes, 
-          config: this.config.router || {}
-        } 
+      "core/Router": () => {
+        const Router = require("./Router")
+        const config = this.config.router || {}
+
+        return new Router(this.routes, config)
       },
 
       // HTTP/HTTPS сервер
-      "core/Server": { 
-        from: require("./Server"), 
-        params: { 
-          container: this.container, 
-          config: this.config.server || {}
-        } 
+      "core/Server": () => { 
+        const Server = require("./Server")
+        const config = this.config.server || {}
+
+        return new Server(this.container, config)
       },
 
       // Контекст для обработчиков приложения
-      "core/Context": { 
-        from: require("./Context"), 
-        params: { 
-          container: this.container, 
-          request: null, 
-          response: null, 
-          route: null 
-        } 
+      "core/Context": ({}, { request, response, route }) => { 
+        const Context = require("./Context")
+
+        request = request || null
+        response = response || null
+        route = route || null
+
+        return new Context(this.container, request, response, route)
       },
 
       // Объект запроса
-      "core/Request": { from: require("./Request") },
+      "core/Request": ({}, { origin, incomingMessage }) => { 
+        const Request = require("./Request")
+        
+        return new Request(origin, incomingMessage)
+      },
       
       // Объект ответа
-      "core/Response": { from: require("./Response") }
+      "core/Response": ({}, { serverResponse }) => { 
+        const Response = require("./Response")
+        
+        return new Response(serverResponse)
+      }
     }
   }
   
@@ -190,8 +196,7 @@ class Application {
    */
   async handle(request, response) {
     const route = this.router.getRoute(request)
-    const params = { request, response, route }
-    const context = this.container.make("core/Context", params)
+    const context = this.container.make("core/Context", { request, response, route })
 
     // Установить заголовки ответа из маршрута
     response.setHeaders(route.headers)

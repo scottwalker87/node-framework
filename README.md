@@ -108,43 +108,40 @@ dependencies - Описание зависимостей модуля
 ## Контейнер зависимостей
 В версии 2.0.1 значительно передлана структура фреймворка по причине использования контейнера зависимостей.
 
-Контейнер зависимостей использует 3 стратегии получения внедренных зависимостей
+Контейнер зависимостей использует 2 стратегии получения внедренных зависимостей
 ```
 invoke - Вызвать зависимость, которая при первом вызове создается по стратегии make, а при дальнейших invoke вызовах, используется инициализированный ранее экземпляр зависимости  
 make - Создать новый экземпляр зависимости
-from - Получить класс зависимости без создания экхемпляра зависимости
 ```
 
-#### Пример использования контейнера зависимостей
+#### Пример описания зависимостей приложения
 ```js
 const { Container } = require("@scottwalker/node-framework")
 
 // Инициализировать контейнер зависимостей
 const container = new Container({
   // Клиенты
-  "app/clients/HttpClient": { from: require("./clients/HttpClient"), params: {} },
-  "app/clients/MongoClient": { from: require("./clients/MongoClient"), params: config.mongo },
+  "app/clients/HttpClient": ({}, { host, strict }) => new require("./clients/HttpClient")(host, strict),
+  "app/clients/MongoClient": ({}, { config }) => new require("./clients/MongoClient")(config),
 
   // Модели
-  "app/models/CampaignModel": { from: require("./models/CampaignModel") },
+  "app/models/CampaignModel": () => new require("./models/CampaignModel")(),
   
   // Репозитории
-  "app/repositories/CampaignRepository": {
-    from: require("./repositories/CampaignRepository"),
-    params: {
-      "@httpClient": ({ make }) => make("app/clients/HttpClient", { host: "localhost", exclude: true }),
-      "@mongoClient": ({ make }) => make("app/clients/MongoClient")
-    }
+  "app/repositories/CampaignRepository": ({ invoke }) => {
+    const CampaignRepository = require("./repositories/CampaignRepository")
+    const mongoClient = invoke("app/clients/MongoClient")
+
+    return new CampaignRepository(mongoClient)
   },
 
   // Сервисы
-  "app/services/CampaignService": {
-    from: require("./services/CampaignService"),
-    params: {
-      "@httpClient": ({ invoke }) => invoke("app/clients/HttpClient"),
-      "@campaignRepository": ({ make }) => make("app/repositories/CampaignRepository"),
-      logged: true
-    }
+  "app/services/CampaignService": ({ invoke, make }) => {
+    const CampaignService = require("./services/CampaignService")
+    const httpClient = invoke("app/clients/HttpClient", { host: "localhost", strict: true })
+    const campaignRepository = make("app/repositories/CampaignRepository")
+
+    return new CampaignService(httpClient, campaignRepository, { logged: true })
   }
 })
 ```
