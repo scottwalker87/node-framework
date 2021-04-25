@@ -2,7 +2,6 @@
 
 <img src="https://nodejs.org/static/images/logos/nodejs-new-pantone-black.svg" alt="node-framework" width="300"/>
 
-[![Build Version](https://img.shields.io/github/package-json/v/scottwalker87/node-framework?style=for-the-badge)](https://github.com/scottwalker87/node-framework)
 [![NPM Package](https://img.shields.io/npm/v/@scottwalker/node-framework?style=for-the-badge)](https://www.npmjs.com/package/@scottwalker/node-framework)
 [![Scottweb](https://img.shields.io/badge/Scottweb-Web%20Development-red?style=for-the-badge)](http://scottweb.ru/)
 
@@ -85,6 +84,7 @@ const { Module } = require("@scottwalker/node-framework")
 
 module.exports = [
   new Module("base", { 
+    // Маршруты модуля
     routes: [
       {
         method: "GET", 
@@ -93,8 +93,29 @@ module.exports = [
         errorHandler: ({ response }) => response.error("Goodbye World!"),
       },
     ],
+
+    // Команды модуля
+    commands: [
+      {
+        name: "base/hello",
+        params: [
+          { key: "name", type: "string", required: true },
+          { key: "p", alias: "price", type: "number", default: 100 },
+        ],
+        flags: [
+          { key: "a", alias: "all" }
+        ],
+        handler: ({ params }) => {
+          const { name, price, all } = params 
+
+          console.log({ name, price, all })
+        }
+      }
+    ],
+
+    // Зависимости модуля
     dependencies: {
-      "base/models/User": { from: require("./models/User"), params: { name: null } }
+      "base/models/User": ({ name }) => new require("./models/User")(name)
     }
   })
 ]
@@ -144,4 +165,24 @@ const container = new Container({
     return new CampaignService(httpClient, campaignRepository, { logged: true })
   }
 })
+```
+
+## Командная оболочка
+В версии 2.1.4 добавлен механизм для выполнения консольных команд приложения.
+
+#### Пример инициализации консольного приложения
+```js
+const { Shell } = require("@scottwalker/node-framework")
+const config = require("./config/main")
+const modules = require("./modules")
+const container = require("./container")(config)
+
+// Инициализировать командную оболочку
+const shell  = new Shell(container, modules, config)
+
+// Парсить переданные аргументы 
+const { name, params } = shell.parse(process.argv)
+
+// Выполнить команду
+shell.exec(name, params)
 ```

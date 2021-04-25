@@ -1,7 +1,7 @@
 /**
- * Контекст приложения
+ * Контекст маршрута приложения
  */
-class Context {
+class RouteContext {
   /**
    * Инициализировать контекст
    * @param {Object} container контейнер зависимостей
@@ -33,4 +33,4 @@ class Context {
   }
 }
 
-module.exports = Context
+module.exports = RouteContext

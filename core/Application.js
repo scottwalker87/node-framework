@@ -112,15 +112,15 @@ class Application {
         return new Server(this.container, config)
       },
 
-      // Контекст для обработчиков приложения
-      "core/Context": ({}, { request, response, route }) => { 
-        const Context = require("./Context")
+      // Контекст для обработчиков марщрутов
+      "core/RouteContext": ({}, { request, response, route }) => { 
+        const RouteContext = require("./contexts/RouteContext")
 
         request = request || null
         response = response || null
         route = route || null
 
-        return new Context(this.container, request, response, route)
+        return new RouteContext(this.container, request, response, route)
       },
 
       // Объект запроса
@@ -141,15 +141,11 @@ class Application {
   
   /**
    * Запустить приложение
-   * @return {Promise}
+   * @return {Promise<void>}
    */
-  run() {
-    return new Promise(async resolve => {
-      // Запустить сервер
-      await this.server.start()
-
-      resolve()
-    })
+  async run() {
+    // Запустить сервер
+    await this.server.start()
   }
 
   /**
@@ -196,7 +192,7 @@ class Application {
    */
   async handle(request, response) {
     const route = this.router.getRoute(request)
-    const context = this.container.make("core/Context", { request, response, route })
+    const context = this.container.make("core/RouteContext", { request, response, route })
 
     // Установить заголовки ответа из маршрута
     response.setHeaders(route.headers)
