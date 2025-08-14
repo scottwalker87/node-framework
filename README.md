@@ -1,6 +1,6 @@
 # Node Framework
 
-<img src="https://nodejs.org/static/images/logos/nodejs-new-pantone-black.svg" alt="node-framework" width="300"/>
+<img src="https://gregorykelleher.com/user/pages/01.blog/grav-post/nodejs.jpg" alt="node-framework" width="300"/>
 
 [![NPM Package](https://img.shields.io/npm/v/@scottwalker/node-framework?style=for-the-badge)](https://www.npmjs.com/package/@scottwalker/node-framework)
 [![Scottweb](https://img.shields.io/badge/Scottweb-Web%20Development-red?style=for-the-badge)](http://scottweb.ru/)
